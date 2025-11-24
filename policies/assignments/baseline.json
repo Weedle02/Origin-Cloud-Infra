@@ -1,0 +1,30 @@
+{
+  "description": "Baseline policy assignment scaffold for the Azure Platform Starter Kit.",
+  "policyAssignments": [
+    {
+      "name": "allowed-locations",
+      "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/" ,
+      "displayName": "Allowed locations",
+      "params": {
+        "listOfAllowedLocations": ["eastus", "eastus2"]
+      }
+    },
+    {
+      "name": "required-tags",
+      "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/",
+      "displayName": "Enforce required tags",
+      "params": {
+        "tagName": "owner",
+        "tagValue": "set-at-assignment"
+      }
+    },
+    {
+      "name": "audit-diagnostics",
+      "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/",
+      "displayName": "Enable diagnostic settings",
+      "params": {
+        "profileName": "central-logs"
+      }
+    }
+  ]
+}

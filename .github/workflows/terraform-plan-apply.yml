@@ -1,0 +1,102 @@
+name: Terraform Plan & Apply
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'infra/terraform/**'
+      - 'platform/config/**'
+      - 'policies/**'
+      - '.github/workflows/terraform-plan-apply.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'infra/terraform/**'
+      - 'platform/config/**'
+      - 'policies/**'
+
+env:
+  TF_IN_AUTOMATION: true
+  TF_CLI_ARGS: -input=false
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ vars.TF_VERSION || '1.6.6' }}
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive infra/terraform
+
+      - name: Terraform validate
+        run: |
+          cd infra/terraform
+          terraform init -backend=false
+          terraform validate
+
+      - name: Security scan (tfsec)
+        uses: aquasecurity/tfsec-action@v1.0.5
+        with:
+          working_directory: infra/terraform
+
+  plan:
+    needs: lint
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ vars.TF_VERSION || '1.6.6' }}
+
+      - name: Azure login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform init
+        working-directory: infra/terraform
+        run: terraform init
+
+      - name: Terraform plan
+        working-directory: infra/terraform
+        run: terraform plan -out=tfplan
+
+  apply:
+    needs: lint
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ vars.TF_VERSION || '1.6.6' }}
+
+      - name: Azure login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform init
+        working-directory: infra/terraform
+        run: terraform init
+
+      - name: Terraform apply
+        working-directory: infra/terraform
+        run: terraform apply -auto-approve
