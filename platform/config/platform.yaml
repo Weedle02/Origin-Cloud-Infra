@@ -1,0 +1,27 @@
+# Sample platform manifest used by both Bicep and Terraform entry points
+# Replace IDs, names, and tags with your tenant-specific values.
+tenantId: 00000000-0000-0000-0000-000000000000
+rootManagementGroupId: contoso-root
+managementGroups:
+  - name: platform
+    displayName: Platform
+    parent: contoso-root
+  - name: landing-zones
+    displayName: Landing Zones
+    parent: contoso-root
+  - name: sandbox
+    displayName: Sandbox
+    parent: contoso-root
+subscriptions:
+  - alias: platform-shared
+    displayName: Platform Shared Services
+    managementGroup: platform
+    tags:
+      env: platform
+      owner: platform-team
+  - alias: dev-apps
+    displayName: Dev Apps
+    managementGroup: landing-zones
+    tags:
+      env: dev
+      owner: app-team
