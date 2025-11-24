@@ -1,25 +1,26 @@
-// Entry point for Azure Platform Starter Kit (Bicep)
-// This file wires management groups, subscriptions, policies, and diagnostics.
+targetScope = 'subscription'
+
+//Parameters
 
 @description('Path to the platform configuration manifest (tenant, management groups, subscriptions).')
-param platformConfigPath string = 'platform/config/platform.yaml'
+param platformConfigPath string 
 
 @description('Location used for shared resources like Log Analytics.')
-param location string = 'eastus'
+param location string 
 
-@description('Toggle to enable diagnostic resources (Log Analytics, storage, Sentinel).')
-param enableDiagnostics bool = true
+@description('Toggle to enable or disable deployment of various components.')
+param deploy object 
 
-// The following modules are scaffolds. Populate them with real resources
-// before deploying to Azure.
-module managementGroups 'modules/management-groups/managementGroups.bicep' = {
+@description('Deplys management groups and Policies before subscriptions are created.')
+module baseLevel 'modules/management-groups/managementGroups.bicep' = if (deploy.enableBaseLevel) {
   name: 'managementGroups'
   params: {
     platformConfigPath: platformConfigPath
   }
 }
 
-module subscriptionFactory 'modules/subscription-factory/subscriptionFactory.bicep' = {
+@description('Deploys Hub Networking resources.')
+module hub '1-hub.bicep' = if (deploy.enableHub) {
   name: 'subscriptionFactory'
   params: {
     platformConfigPath: platformConfigPath
@@ -27,7 +28,7 @@ module subscriptionFactory 'modules/subscription-factory/subscriptionFactory.bic
   dependsOn: [managementGroups]
 }
 
-module baselinePolicies 'modules/policies/baselinePolicies.bicep' = {
+module spoke '2-spoke.bicep' = if (deploy.enableSpoke) {
   name: 'baselinePolicies'
   params: {
     platformConfigPath: platformConfigPath
@@ -35,7 +36,31 @@ module baselinePolicies 'modules/policies/baselinePolicies.bicep' = {
   dependsOn: [managementGroups, subscriptionFactory]
 }
 
-module diagnostics 'modules/diagnostics/diagnostics.bicep' = if (enableDiagnostics) {
+module identity '3-identity.bicep' = if (deploy.enableIdentity) {
+  name: 'centralDiagnostics'
+  params: {
+    location: location
+  }
+  dependsOn: [managementGroups, subscriptionFactory]
+}
+
+module operations '4-operations.bicep' = if (deploy.enableOperations) {
+  name: 'centralDiagnostics'
+  params: {
+    location: location
+  }
+  dependsOn: [managementGroups, subscriptionFactory]
+}
+
+module sharedServices '5-sharedServices.bicep' = if (deploy.enableSharedServices) {
+  name: 'centralDiagnostics'
+  params: {
+    location: location
+  }
+  dependsOn: [managementGroups, subscriptionFactory]
+}
+
+module diagnostics '6-diagnostics.bicep' = if (deploy.enableDiagnostics) {
   name: 'centralDiagnostics'
   params: {
     location: location
