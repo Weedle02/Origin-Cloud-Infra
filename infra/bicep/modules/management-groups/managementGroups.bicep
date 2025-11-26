@@ -1,8 +1,20 @@
-// Scaffold module: creates management group hierarchy based on platform.yaml
-@description('Path to platform.yaml manifest')
-param platformConfigPath string
+targetScope = 'tenant'
 
-// TODO: Replace with logic to parse manifest and create management groups.
-// For now, we expose outputs that future modules can use.
+param location string
 
-output description string = 'Create management group hierarchy from ' + platformConfigPath
+param mainPolicyAssignmentName string
+
+param policyDefinitionId string 
+
+module policyAssignment 'br/public:avm/ptn/authorization/policy-assignment:0.5.1' = {
+  name: 'policyAssignmentDeployment'
+  scope: managementGroup('mainmanagementgroup')
+  params: {
+    name: mainPolicyAssignmentName
+    policyDefinitionId: policyDefinitionId
+    location: location
+    metadata: {
+      assignedBy: 'Bicep'
+    }
+  }
+}
