@@ -2,8 +2,8 @@ targetScope = 'subscription'
 
 //Parameters
 
-@description('Path to the platform configuration manifest (tenant, management groups, subscriptions).')
-param platformConfigPath string
+@description('Platform configuration manifest (tenant, management groups, subscriptions).')
+param platformConfig object
 
 @description('Location used for shared resources like Log Analytics and hub networking.')
 param location string
@@ -16,7 +16,7 @@ module baseLevel '0-baseLevel.bicep' = if (deploy.enableBaseLevel) {
   name: 'baseLevel'
   scope: tenant()
   params: {
-    platformConfigPath: platformConfigPath
+    platformConfig: platformConfig
   }
 }
 
@@ -33,7 +33,7 @@ module spoke '2-spoke.bicep' = if (deploy.enableSpoke) {
   name: 'spoke'
   scope: subscription()
   params: {
-    platformConfigPath: platformConfigPath
+    platformConfig: platformConfig
   }
 }
 

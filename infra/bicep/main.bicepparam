@@ -10,6 +10,7 @@ param deploy object = {
   enableDiagnostics: true
 }
 
-param platformConfigPath = 'platform/config/platform.yaml'
+param platformConfig = loadYamlContent('../../platform/config/platform.yaml')
 
 param location = 'eastus'
+

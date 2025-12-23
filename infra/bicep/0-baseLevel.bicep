@@ -1,11 +1,10 @@
 targetScope = 'tenant'
 
-@description('Path to the platform configuration manifest (tenant, management groups, subscriptions).')
-param platformConfigPath string
+@description('Platform configuration manifest loaded from platform.yaml.')
+param platformConfig object
 
-var platform = loadYamlContent(platformConfigPath)
-var rootManagementGroupId = platform.rootManagementGroupId
-var managementGroups = platform.managementGroups
+var rootManagementGroupId = platformConfig.rootManagementGroupId
+var managementGroups = platformConfig.managementGroups
 
 // Root management group is treated as existing; children are created/updated based on the manifest
 resource rootManagementGroup 'Microsoft.Management/managementGroups@2020-05-01' existing = {
