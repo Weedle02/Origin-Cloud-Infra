@@ -12,5 +12,7 @@ param deploy object = {
 
 param platformConfig = loadYamlContent('../../platform/config/platform.yaml')
 
+param policyAssignments = loadJsonContent('../../policies/assignments/baseline.json')
+
 param location = 'eastus'
 

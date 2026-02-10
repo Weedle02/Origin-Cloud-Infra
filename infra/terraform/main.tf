@@ -30,21 +30,31 @@ variable "enable_diagnostics" {
   default     = true
 }
 
+variable "policy_assignments_path" {
+  type        = string
+  description = "Path to the policy assignment manifest JSON"
+  default     = "policies/assignments/baseline.json"
+}
+
 module "management_groups" {
   source              = "./modules/management_groups"
   platform_config_path = var.platform_config_path
 }
 
 module "subscription_factory" {
-  source              = "./modules/subscription_factory"
-  platform_config_path = var.platform_config_path
-  depends_on           = [module.management_groups]
+  source                 = "./modules/subscription_factory"
+  platform_config_path   = var.platform_config_path
+  root_management_group_id = module.management_groups.root_management_group_id
+  management_group_ids   = module.management_groups.management_group_ids
+  depends_on             = [module.management_groups]
 }
 
 module "policies" {
-  source              = "./modules/policies"
-  platform_config_path = var.platform_config_path
-  depends_on           = [module.management_groups, module.subscription_factory]
+  source                   = "./modules/policies"
+  platform_config_path      = var.platform_config_path
+  policy_assignments_path   = var.policy_assignments_path
+  root_management_group_id  = module.management_groups.root_management_group_id
+  depends_on                = [module.management_groups, module.subscription_factory]
 }
 
 module "diagnostics" {

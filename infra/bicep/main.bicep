@@ -11,12 +11,17 @@ param location string
 @description('Toggle to enable or disable deployment of various components.')
 param deploy object
 
+@description('Policy assignment manifest loaded from baseline.json.')
+param policyAssignments object
+
 @description('Creates the base-level management group hierarchy from the platform manifest.')
 module baseLevel '0-baseLevel.bicep' = if (deploy.enableBaseLevel) {
   name: 'baseLevel'
   scope: tenant()
   params: {
     platformConfig: platformConfig
+    location: location
+    policyAssignments: policyAssignments
   }
 }
 
