@@ -3,10 +3,6 @@ locals {
   role_assignments = try(local.platform.roleAssignments, [])
 }
 
-# Role assignments are keyed by principalId__roleDefinitionName__scope to ensure
-# uniqueness. Each entry in platform.yaml roleAssignments requires:
-#   principalId, roleDefinitionName, scope
-# Optional: principalType, skipServicePrincipalAadCheck
 resource "azurerm_role_assignment" "platform" {
   for_each = {
     for ra in local.role_assignments :

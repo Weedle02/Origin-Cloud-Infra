@@ -7,9 +7,6 @@ terraform {
     }
   }
 
-  # Remote state — run `terraform init -migrate-state` if upgrading from local state.
-  # Override resource_group_name / storage_account_name with -backend-config flags or a
-  # partial backend config file (e.g. backend.hcl) for environment-specific deployments.
   backend "azurerm" {
     resource_group_name  = "rg-tfstate"
     storage_account_name = "sttfstateorigin"

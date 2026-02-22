@@ -7,10 +7,7 @@ locals {
     for sub in local.subscriptions : sub.alias => sub
     if contains(keys(sub), "subscriptionId")
   }
-
-  # Subscriptions to vend — only active when billing_scope_id is provided.
-  # Add `createNew: true` (and no `subscriptionId`) to a subscription entry in the
-  # platform manifest to have Terraform create it via the billing scope.
+  
   subscriptions_to_create = var.billing_scope_id != null ? {
     for sub in local.subscriptions : sub.alias => sub
     if !contains(keys(sub), "subscriptionId")
