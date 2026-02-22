@@ -35,44 +35,47 @@ resource childManagementGroups 'Microsoft.Management/managementGroups@2020-05-01
 }]
 
 // Create subscriptions where billing scope is supplied.
-var subscriptionsToCreate = [for sub in subscriptions: if (contains(sub, 'billingScope')) sub]
+// filter() produces a typed non-null array; the [for…if] pattern emits (T|null)[] which causes
+// type errors on subsequent property accesses such as sub.alias.
+var subscriptionsToCreate = filter(subscriptions, sub => contains(sub, 'billingScope'))
 
-resource subscriptionAliases 'Microsoft.Subscription/aliases@2020-09-01' = [for sub in subscriptionsToCreate: {
+// API 2021-10-01 introduced additionalProperties.managementGroupId, so the subscription is
+// placed in the target management group at creation time. This eliminates the need for a
+// separate Microsoft.Management/managementGroups/subscriptions association step (whose
+// 'name' property would require subscriptionAliases[i].properties.subscriptionId — a runtime
+// value that ARM cannot resolve at the start of deployment).
+resource subscriptionAliases 'Microsoft.Subscription/aliases@2021-10-01' = [for sub in subscriptionsToCreate: {
   name: sub.alias
   properties: {
     displayName: sub.displayName
     workload: sub.workload ?? 'Production'
     billingScope: sub.billingScope
+    additionalProperties: {
+      managementGroupId: '/providers/Microsoft.Management/managementGroups/${string(sub.managementGroup ?? rootManagementGroupId)}'
+    }
   }
-}]
-
-// Associate newly created subscriptions to the target management group.
-resource createdSubscriptionAssociations 'Microsoft.Management/managementGroups/subscriptions@2020-05-01' = [for (sub, i) in subscriptionsToCreate: {
-  name: subscriptionAliases[i].properties.subscriptionId
-  scope: managementGroup(sub.managementGroup ?? rootManagementGroupId)
-  dependsOn: [
-    subscriptionAliases[i]
-    childManagementGroups
-  ]
+  dependsOn: [childManagementGroups]
 }]
 
 // Associate existing subscriptions (requires subscriptionId in the manifest).
-var subscriptionsToAssociate = [for sub in subscriptions: if (contains(sub, 'subscriptionId')) sub]
+var subscriptionsToAssociate = filter(subscriptions, sub => contains(sub, 'subscriptionId'))
 
+// Microsoft.Management/managementGroups/subscriptions is tenant-scoped; no scope: property is
+// allowed. The name must encode both segments as '{managementGroupId}/{subscriptionId}'.
+// string() casts are required because filter() types each element as 'object'.
 resource existingSubscriptionAssociations 'Microsoft.Management/managementGroups/subscriptions@2020-05-01' = [for sub in subscriptionsToAssociate: {
-  name: sub.subscriptionId
-  scope: managementGroup(sub.managementGroup ?? rootManagementGroupId)
+  name: '${string(sub.managementGroup ?? rootManagementGroupId)}/${string(sub.subscriptionId)}'
   dependsOn: [
     childManagementGroups
   ]
 }]
 
-// Baseline policy assignments at the root management group.
+// Baseline policy assignments scoped to the root management group.
+// The module's targetScope is 'managementGroup', so scope: here drives which group it targets.
 module baselinePolicies 'modules/policies/baselinePolicies.bicep' = if (length(policyAssignmentList) > 0) {
   name: 'baselinePolicies'
-  scope: tenant()
+  scope: managementGroup(rootManagementGroupId)
   params: {
-    rootManagementGroupId: rootManagementGroupId
     location: location
     policyAssignments: policyAssignments
   }

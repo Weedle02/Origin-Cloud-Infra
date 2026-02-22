@@ -15,43 +15,21 @@ param tags object = {
   workload: 'hub'
 }
 
-var subnets = [
-  {
-    name: 'AzureFirewallSubnet'
-    prefix: '10.0.0.0/26'
-  }
-  {
-    name: 'GatewaySubnet'
-    prefix: '10.0.0.64/27'
-  }
-  {
-    name: 'shared-services'
-    prefix: '10.0.1.0/24'
-  }
-]
-
 resource hubRg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
   name: resourceGroupName
   location: location
   tags: tags
 }
 
-resource hubVnet 'Microsoft.Network/virtualNetworks@2023-04-01' = {
-  name: 'vnet-hub'
-  location: hubRg.location
-  tags: tags
-  properties: {
-    addressSpace: {
-      addressPrefixes: [addressSpace]
-    }
-    subnets: [for subnet in subnets: {
-      name: subnet.name
-      properties: {
-        addressPrefix: subnet.prefix
-      }
-    }]
+module hubNetwork 'modules/network/hubNetwork.bicep' = {
+  name: 'hubNetwork'
+  scope: hubRg
+  params: {
+    location: location
+    addressSpace: addressSpace
+    tags: tags
   }
 }
 
 output hubResourceGroupName string = hubRg.name
-output hubVnetId string = hubVnet.id
+output hubVnetId string = hubNetwork.outputs.hubVnetId

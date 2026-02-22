@@ -1,7 +1,4 @@
-targetScope = 'tenant'
-
-@description('Root management group name where baseline policies are assigned.')
-param rootManagementGroupId string
+targetScope = 'managementGroup'
 
 @description('Location used for policy assignment metadata when required.')
 param location string
@@ -11,14 +8,15 @@ param policyAssignments object
 
 var policyAssignmentList = policyAssignments.policyAssignments ?? []
 
+// No scope: property needed — the management group is determined by the caller via
+// scope: managementGroup(rootManagementGroupId) in the module invocation.
 resource baselinePolicyAssignments 'Microsoft.Authorization/policyAssignments@2022-06-01' = [for assignment in policyAssignmentList: {
   name: assignment.name
-  scope: managementGroup(rootManagementGroupId)
   location: assignment.location ?? location
   properties: {
     displayName: assignment.displayName ?? assignment.name
     policyDefinitionId: assignment.policyDefinitionId
-    description: assignment.description ?? null
+    description: assignment.?description ?? ''
     metadata: assignment.metadata ?? {
       assignedBy: 'Bicep'
     }
