@@ -1,21 +1,6 @@
-variable "platform_config_path" {
-  type        = string
-  description = "Path to platform.yaml manifest"
-}
-
-variable "policy_assignments_path" {
-  type        = string
-  description = "Path to policy assignment JSON manifest"
-}
-
-variable "root_management_group_id" {
-  type        = string
-  description = "Root management group ID where baseline policies are assigned"
-}
-
 locals {
-  platform = yamldecode(file(var.platform_config_path))
-  policy_manifest = jsondecode(file(var.policy_assignments_path))
+  platform           = yamldecode(file(var.platform_config_path))
+  policy_manifest    = jsondecode(file(var.policy_assignments_path))
   policy_assignments = try(local.policy_manifest.policyAssignments, [])
 }
 
@@ -32,9 +17,4 @@ resource "azurerm_policy_assignment" "baseline" {
   metadata             = jsonencode(try(each.value.metadata, { assignedBy = "Terraform" }))
   parameters           = jsonencode(try(each.value.params, {}))
   enforcement_mode     = try(each.value.enforcementMode, "Default")
-}
-
-output "policy_scope" {
-  description = "Root management group for policy assignments"
-  value       = lookup(local.platform, "rootManagementGroupId", null)
 }
